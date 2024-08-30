@@ -1,0 +1,189 @@
+{{ define "content"}}
+<section class="bookings-management">
+    <div class="container">
+        <h1 class="text-center mb-4">Panel de Reservas</h1>
+
+        <!-- Resumen de KPIs -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Total de Reservas</h5>
+                        <p class="card-text display-4">{{ .totalBookings }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Ingresos Totales</h5>
+                        <p class="card-text display-4">{{ .totalRevenue }}€</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Tasa de Ocupación</h5>
+                        <p class="card-text display-4">{{ .occupancyRate }}%</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body">
+                        <h5 class="card-title">Reservas Pendientes</h5>
+                        <p class="card-text display-4">{{ .pendingBookings }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Reservas -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Tendencia de Reservas</h5>
+                        <canvas id="bookingsTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Reservas Recientes -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Reservas Recientes</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Tour</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Monto</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ if .recentBookings }}
+                                {{ range .recentBookings }}
+                                <tr>
+                                    <td>{{ .ID }}</td>
+                                    <td>{{ .ClientName }}</td>
+                                    <td>{{ .TourName }}</td>
+                                    <td>{{ .Date }}</td>
+                                    <td><span class="badge bg-{{ .StatusColor }}">{{ .Status }}</span></td>
+                                    <td>{{ .Amount }}</td>
+                                    <td>
+                                        <a href="/bookings/{{ .ID }}" class="btn btn-sm btn-info" title="Ver detalles"><i class="fas fa-eye"></i></a>
+                                        <button class="btn btn-sm btn-warning edit-booking" data-id="{{ .ID }}" title="Editar"><i class="fas fa-edit"></i></button>
+                                    </td>
+                                </tr>
+                                {{ end }}
+                            {{ else }}
+                                <tr>
+                                    <td colspan="7" class="text-center">No se encontraron reservas recientes.</td>
+                                </tr>
+                            {{ end }}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paginación -->
+        {{ if gt .totalPages 1 }}
+        <nav aria-label="Navegación de páginas" class="mb-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {{ if eq .currentPage 1 }}disabled{{ end }}">
+                    <a class="page-link" href="?page={{ sub .currentPage 1 }}" tabindex="-1">Anterior</a>
+                </li>
+                {{ range $i := .pages }}
+                <li class="page-item {{ if eq $i $.currentPage }}active{{ end }}">
+                    <a class="page-link" href="?page={{ $i }}">{{ $i }}</a>
+                </li>
+                {{ end }}
+                <li class="page-item {{ if eq .currentPage .totalPages }}disabled{{ end }}">
+                    <a class="page-link" href="?page={{ add .currentPage 1 }}">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
+        {{ end }}
+
+        <!-- Análisis de Tours Populares -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Tours más Populares</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="popularToursChart"></canvas>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Gráfico de tendencia de reservas
+    var ctxTrend = document.getElementById('bookingsTrendChart').getContext('2d');
+    var trendChart = new Chart(ctxTrend, {
+        type: 'line',
+        data: {
+            labels: {{ .trendLabelsJSON }},
+            datasets: [{
+                label: 'Reservas',
+                data: {{ .trendDataJSON }},
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Gráfico de tours populares
+    var ctxPopular = document.getElementById('popularToursChart').getContext('2d');
+    var popularChart = new Chart(ctxPopular, {
+        type: 'bar',
+        data: {
+            labels: {{ .popularTourNamesJSON }},
+            datasets: [{
+                label: 'Número de Reservas',
+                data: {{ .popularTourBookingsJSON }},
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgb(54, 162, 235)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Funcionalidad para editar reservas
+    document.querySelectorAll('.edit-booking').forEach(button => {
+        button.addEventListener('click', function () {
+            const bookingId = this.getAttribute('data-id');
+            // Aquí iría la lógica para abrir un modal de edición o redirigir a una página de edición
+            alert('Editar reserva con ID: ' + bookingId);
+        });
+    });
+</script>
+{{ end }}

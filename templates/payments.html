@@ -1,0 +1,162 @@
+{{ define "content" }}
+<section class="payments-section py-5">
+    <div class="container">
+        <h1 class="text-center mb-4">Gestión de Pagos</h1>
+        
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">Nuevo Pago</h5>
+                        <p class="card-text">Por favor, seleccione la moneda en la que desea realizar el pago:</p>
+                        
+                        <form id="payment-form">
+                            <div class="mb-3">
+                                <label for="currency" class="form-label">Moneda:</label>
+                                <select class="form-select" id="currency" name="currency">
+                                    <option value="USD">Dólares (USD)</option>
+                                    <option value="EUR">Euros (EUR)</option>
+                                    <option value="BRL">Reales Brasileños (BRL)</option>
+                                    <option value="ARS">Pesos Argentinos (ARS)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="amount" class="form-label">Monto a Pagar:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" id="currency-symbol">$</span>
+                                    <input type="number" class="form-control" id="amount" name="amount" placeholder="0.00" step="0.01" required>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Procesar Pago</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="text-center mb-4">Historial de Pagos</h2>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Monto</th>
+                        <th>Moneda</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ if .payments }}
+                        {{ range .payments }}
+                        <tr>
+                            <td>{{ .ID }}</td>
+                            <td>{{ .Date }}</td>
+                            <td>{{ .Amount }}</td>
+                            <td>{{ .Currency }}</td>
+                            <td>{{ .Status }}</td>
+                            <td>
+                                <a href="/payments/{{ .ID }}" class="btn btn-sm btn-info" title="Ver detalles"><i class="fas fa-eye"></i></a>
+                                <button class="btn btn-sm btn-danger delete-payment" data-id="{{ .ID }}" title="Eliminar"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                        {{ end }}
+                    {{ else }}
+                        <tr>
+                            <td colspan="6" class="text-center">No se encontraron pagos.</td>
+                        </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        {{ if gt .totalPages 1 }}
+        <nav aria-label="Navegación de páginas" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {{ if eq .currentPage 1 }}disabled{{ end }}">
+                    <a class="page-link" href="?page={{ sub .currentPage 1 }}" tabindex="-1">Anterior</a>
+                </li>
+                {{ range $i := .pages }}
+                <li class="page-item {{ if eq $i $.currentPage }}active{{ end }}">
+                    <a class="page-link" href="?page={{ $i }}">{{ $i }}</a>
+                </li>
+                {{ end }}
+                <li class="page-item {{ if eq .currentPage .totalPages }}disabled{{ end }}">
+                    <a class="page-link" href="?page={{ add .currentPage 1 }}">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
+        {{ end }}
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const currencySelect = document.getElementById('currency');
+        const currencySymbol = document.getElementById('currency-symbol');
+
+        const symbols = {
+            'USD': '$',
+            'EUR': '€',
+            'BRL': 'R$',
+            'ARS': '$'
+        };
+
+        currencySelect.addEventListener('change', function() {
+            currencySymbol.textContent = symbols[this.value];
+        });
+
+        document.getElementById('payment-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const currency = currencySelect.value;
+            const amount = document.getElementById('amount').value;
+            
+            // Aquí enviamos los datos del pago al servidor
+            fetch('/payments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ currency, amount }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Pago de ${amount} ${currency} procesado con éxito`);
+                    location.reload(); // Recargamos la página para mostrar el nuevo pago
+                } else {
+                    alert('Error al procesar el pago: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al procesar el pago');
+            });
+        });
+
+        // Manejar la eliminación de pagos
+        document.querySelectorAll('.delete-payment').forEach(button => {
+            button.addEventListener('click', function() {
+                if (confirm('��Está seguro de que desea eliminar este pago?')) {
+                    const paymentId = this.getAttribute('data-id');
+                    fetch(`/payments/${paymentId}`, { method: 'DELETE' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                this.closest('tr').remove();
+                                alert('Pago eliminado con éxito');
+                            } else {
+                                alert('Error al eliminar el pago');
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
+                }
+            });
+        });
+    });
+</script>
+{{ end }}
