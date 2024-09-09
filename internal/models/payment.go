@@ -3,10 +3,11 @@ package models
 import "time"
 
 type Payment struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	BookingID uint      `json:"booking_id"`
+	PaymentID int       `json:"payment_id"`
+	BookingID int       `json:"booking_id"`
 	Amount    float64   `json:"amount"`
-	Currency  string    `json:"currency"`
+	Date      time.Time `json:"date"`
+	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

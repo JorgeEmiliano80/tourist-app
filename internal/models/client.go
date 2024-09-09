@@ -3,10 +3,11 @@ package models
 import "time"
 
 type Client struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `gorm:"unique" json:"email"`
-	Phone     string    `json:"phone"`
+	ClientID  int       `json:"client_id"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	Email     string    `json:"email"`
+	Phone     string    `json:"phone,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
