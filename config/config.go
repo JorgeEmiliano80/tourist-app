@@ -1,32 +1,44 @@
 package config
 
 import (
+	"fmt"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	ServerPort string
-	DbHost     string
-	DbPort     string
-	DbUser     string
-	DbPassword string
-	DbName     string
+	DatabaseURL string
+	Port        string
+	DBHost      string
+	DBUser      string
+	DBPassword  string
+	DBName      string
+	DBPort      string
 }
 
-func LoadConfig() *Config {
-	return &Config{
-		ServerPort: getEnv("SERVER_PORT", "8080"),
-		DbHost:     getEnv("DB_HOST", "localhost"),
-		DbPort:     getEnv("DB_PORT", "5432"),
-		DbUser:     getEnv("DB_USER", "jorgeemiliano"),
-		DbPassword: getEnv("DB_PASSWORD", "Jorge41304254#"),
-		DbName:     getEnv("DB_NAME", "tourist-app"),
+func Load() *Config {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Warning: Error loading .env file")
 	}
-}
 
-func getEnv(key, defaultValue string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
+	config := &Config{
+		DBHost:     os.Getenv("DB_HOST"),
+		DBUser:     os.Getenv("DB_USER"),
+		DBPassword: os.Getenv("DB_PASSWORD"),
+		DBName:     os.Getenv("DB_NAME"),
+		DBPort:     os.Getenv("DB_PORT"),
+		Port:       os.Getenv("PORT"),
 	}
-	return defaultValue
+
+	config.DatabaseURL = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		config.DBHost,
+		config.DBPort,
+		config.DBUser,
+		config.DBPassword,
+		config.DBName,
+	)
+
+	return config
 }

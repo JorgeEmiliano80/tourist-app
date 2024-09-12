@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Container, Typography, Button } from '@material-ui/core';
+import { Container, Typography, Button } from '@mui/material';
 import { getTour } from '../services/tourService';
 import BookingForm from '../components/BookingForm';
 
@@ -28,7 +29,7 @@ const TourPage = () => {
 
     return (
         <Container>
-            <Typography variant="h2" gutterBottom>
+            <Typography variant="h2" component="h1" gutterBottom>
                 {tour.name}
             </Typography>
             <Typography variant="body1" paragraph>
@@ -49,7 +50,7 @@ const TourPage = () => {
                     tourId={tour.id}
                     onBookingComplete={() => {
                         setShowBookingForm(false);
-                        // Aqui podemos agregar uma notificacion de exito
+                        // Aquí podemos agregar una notificación de éxito
                     }}
                 />
             )}
@@ -57,4 +58,4 @@ const TourPage = () => {
     );
 };
 
-export default TourPage;
+export default TourPage

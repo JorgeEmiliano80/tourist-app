@@ -2,17 +2,23 @@ package main
 
 import (
 	"log"
+	"net/http"
+
+	"tourist-app/config"
 	"tourist-app/database"
 	"tourist-app/internal/handlers"
 	"tourist-app/internal/repository"
 	"tourist-app/internal/services"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 )
 
 func main() {
+	// Load configuration
+	cfg := config.Load()
+
 	// Initialize the database
-	db, err := database.InitDB()
+	db, err := database.InitDB(cfg)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
@@ -37,38 +43,37 @@ func main() {
 	clientHandler := handlers.NewClientHandler(clientService)
 
 	// Setup router
-	router := gin.Default()
+	r := mux.NewRouter()
 
 	// Tours routes
-	router.GET("/tours", tourHandler.GetTours)
-	router.GET("/tours/:id", tourHandler.GetTour)
-	router.POST("/tours", tourHandler.CreateTour)
-	router.PUT("/tours/:id", tourHandler.UpdateTour)
-	router.DELETE("/tours/:id", tourHandler.DeleteTour)
+	r.HandleFunc("/tours", tourHandler.GetAllTours).Methods("GET")
+	r.HandleFunc("/tours/{id}", tourHandler.GetTour).Methods("GET")
+	r.HandleFunc("/tours", tourHandler.CreateTour).Methods("POST")
+	r.HandleFunc("/tours/{id}", tourHandler.UpdateTour).Methods("PUT")
+	r.HandleFunc("/tours/{id}", tourHandler.DeleteTour).Methods("DELETE")
 
-	// Bookings routes
-	router.GET("/bookings", bookingHandler.GetBookings)
-	router.GET("/bookings/:id", bookingHandler.GetBooking)
-	router.POST("/bookings", bookingHandler.CreateBooking)
-	router.PUT("/bookings/:id", bookingHandler.UpdateBooking)
-	router.DELETE("/bookings/:id", bookingHandler.DeleteBooking)
+	// Booking routes
+	r.HandleFunc("/bookings", bookingHandler.GetAllBookings).Methods("GET")
+	r.HandleFunc("/bookings/{id}", bookingHandler.GetBooking).Methods("GET")
+	r.HandleFunc("/bookings", bookingHandler.CreateBooking).Methods("POST")
+	r.HandleFunc("/bookings/{id}", bookingHandler.UpdateBooking).Methods("PUT")
+	r.HandleFunc("/bookings/{id}", bookingHandler.DeleteBooking).Methods("DELETE")
 
-	// Payments routes
-	router.GET("/payments", paymentHandler.GetPayments)
-	router.GET("/payments/:id", paymentHandler.GetPayment)
-	router.POST("/payments", paymentHandler.CreatePayment)
-	router.PUT("/payments/:id", paymentHandler.UpdatePayment)
-	router.DELETE("/payments/:id", paymentHandler.DeletePayment)
+	// Payment routes
+	r.HandleFunc("/payments", paymentHandler.GetAllPayments).Methods("GET")
+	r.HandleFunc("/payments/{id}", paymentHandler.GetPayment).Methods("GET")
+	r.HandleFunc("/payments", paymentHandler.CreatePayment).Methods("POST")
+	r.HandleFunc("payments/{id}", paymentHandler.UpdatePayment).Methods("PUT")
+	r.HandleFunc("/payments/{id}", paymentHandler.DeletePayment).Methods("DELETE")
 
-	// Clients routes
-	router.GET("/clients", clientHandler.GetClients)
-	router.GET("/clients/:id", clientHandler.GetClient)
-	router.POST("/clients", clientHandler.CreateClient)
-	router.PUT("/clients/:id", clientHandler.UpdateClient)
-	router.DELETE("/clients/:id", clientHandler.DeleteClient)
+	// Client routes
+	r.HandleFunc("/clients", clientHandler.GetAllClients).Methods("GET")
+	r.HandleFunc("/clients/{id}", clientHandler.GetAllClients).Methods("GET")
+	r.HandleFunc("/clients", clientHandler.CreateClient).Methods("POST")
+	r.HandleFunc("/clients/{id}", clientHandler.UpdateClient).Methods("PUT")
+	r.HandleFunc("/clients/{id}", clientHandler.DeleteClient).Methods("DELETE")
 
 	// Start server
-	if err := router.Run(":8080"); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
-	}
+	log.Printf("Server starting on port %s", cfg.Port)
+	log.Fatal(http.ListenAndServe(":"+cfg.Port, r))
 }

@@ -1,74 +1,106 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
+
 	"tourist-app/internal/models"
 	"tourist-app/internal/services"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 )
 
 type BookingHandler struct {
-	Service *services.BookingService
+	service *services.BookingService
 }
 
 func NewBookingHandler(service *services.BookingService) *BookingHandler {
-	return &BookingHandler{Service: service}
+	return &BookingHandler{service: service}
 }
 
-func (h *BookingHandler) GetBookings(c *gin.Context) {
-	bookings, err := h.Service.GetBookings()
+func (h *BookingHandler) GetAllBookings(w http.ResponseWriter, r *http.Request) {
+	bookings, err := h.service.GetAllBookings()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusOK, bookings)
+
+	json.NewEncoder(w).Encode(bookings)
 }
 
-func (h *BookingHandler) GetBooking(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	booking, err := h.Service.GetBooking(id)
+func (h *BookingHandler) GetBooking(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		http.Error(w, "Invalid booking ID", http.StatusBadRequest)
 		return
 	}
-	c.JSON(http.StatusOK, booking)
+
+	booking, err := h.service.GetBookingByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(booking)
 }
 
-func (h *BookingHandler) CreateBooking(c *gin.Context) {
+func (h *BookingHandler) CreateBooking(w http.ResponseWriter, r *http.Request) {
 	var booking models.Booking
-	if err := c.ShouldBindJSON(&booking); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	err := json.NewDecoder(r.Body).Decode(&booking)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := h.Service.CreateBooking(&booking); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	err = h.service.CreateBooking(&booking)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusCreated, booking)
+
+	w.WriteHeader(http.StatusCreated)
 }
 
-func (h *BookingHandler) UpdateBooking(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+func (h *BookingHandler) UpdateBooking(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid booking ID", http.StatusBadRequest)
+		return
+	}
+
 	var booking models.Booking
-	if err := c.ShouldBindJSON(&booking); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	err = json.NewDecoder(r.Body).Decode(&booking)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	booking.BookingID = id
-	if err := h.Service.UpdateBooking(&booking); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	booking.ID = id
+	err = h.service.UpdateBooking(&booking)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusOK, booking)
+
+	w.WriteHeader(http.StatusOK)
 }
 
-func (h *BookingHandler) DeleteBooking(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	if err := h.Service.DeleteBooking(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+func (h *BookingHandler) DeleteBooking(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid booking ID", http.StatusBadRequest)
 		return
 	}
-	c.JSON(http.StatusNoContent, nil)
+
+	err = h.service.DeleteBooking(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

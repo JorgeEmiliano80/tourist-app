@@ -1,76 +1,106 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
+
 	"tourist-app/internal/models"
 	"tourist-app/internal/services"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 )
 
 type ClientHandler struct {
-	Service *services.ClientService
+	service *services.ClientService
 }
 
 func NewClientHandler(service *services.ClientService) *ClientHandler {
-	return &ClientHandler{
-		Service: service,
-	}
+	return &ClientHandler{service: service}
 }
 
-func (h *ClientHandler) GetClients(c *gin.Context) {
-	clients, err := h.Service.GetClients()
+func (h *ClientHandler) GetAllClients(w http.ResponseWriter, r *http.Request) {
+	clients, err := h.service.GetAllClients()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusOK, clients)
+
+	json.NewEncoder(w).Encode(clients)
 }
 
-func (h *ClientHandler) GetClient(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	client, err := h.Service.GetClient(id)
+func (h *ClientHandler) GetClient(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Client not found"})
+		http.Error(w, "Invalid client ID", http.StatusBadRequest)
 		return
 	}
-	c.JSON(http.StatusOK, client)
+
+	client, err := h.service.GetClientByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(client)
 }
 
-func (h *ClientHandler) CreateClient(c *gin.Context) {
+func (h *ClientHandler) CreateClient(w http.ResponseWriter, r *http.Request) {
 	var client models.Client
-	if err := c.ShouldBindJSON(&client); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	err := json.NewDecoder(r.Body).Decode(&client)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := h.Service.CreateClient(&client); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	err = h.service.CreateClient(&client)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusCreated, client)
+
+	w.WriteHeader(http.StatusCreated)
 }
 
-func (h *ClientHandler) UpdateClient(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+func (h *ClientHandler) UpdateClient(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid client ID", http.StatusBadRequest)
+		return
+	}
+
 	var client models.Client
-	if err := c.ShouldBindJSON(&client); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	err = json.NewDecoder(r.Body).Decode(&client)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	client.ClientID = id
-	if err := h.Service.UpdateClient(&client); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	client.ID = id
+	err = h.service.UpdateClient(&client)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusOK, client)
+
+	w.WriteHeader(http.StatusOK)
 }
 
-func (h *ClientHandler) DeleteClient(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	if err := h.Service.DeleteClient(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+func (h *ClientHandler) DeleteClient(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid client ID", http.StatusBadRequest)
 		return
 	}
-	c.JSON(http.StatusNoContent, nil)
+
+	err = h.service.DeleteClient(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

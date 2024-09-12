@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, List, ListItem, ListItemText, Button } from '@material-ui/core';
+import { Container, Typography, List, ListItem, ListItemText, Button, Stack } from '@mui/material';
 import { getBookings, deleteBooking } from '../services/bookingService';
 import { useAuthContext } from '../context/AuthContext';
 
@@ -16,7 +16,7 @@ const BookingPage = () => {
             const response = await getBookings();
             setBookings(response.data);
         } catch (error) {
-            console.error('Errorr fetching bookings: ', error);
+            console.error('Error fetching bookings: ', error);
         }
     };
 
@@ -36,18 +36,29 @@ const BookingPage = () => {
             </Typography>
             <List>
                 {bookings.map((booking) => (
-                    <ListItem key={booking.id}>
+                    <ListItem
+                        key={booking.id}
+                        secondaryAction={
+                            <Button
+                                variant="contained"
+                                color="error"
+                                onClick={() => handleDeleteBooking(booking.id)}
+                            >
+                                Cancel Booking
+                            </Button>
+                        }
+                    >
                         <ListItemText
                             primary={booking.tour.name}
-                            secondary={`Date: ${booking.date}, People: ${booking.numberOfPeople}`}
+                            secondary={
+                                <React.Fragment>
+                                    <Typography component="span" variant="body2" color="text.primary">
+                                        Date: {booking.date}
+                                    </Typography>
+                                    {" — People: " + booking.numberOfPeople}
+                                </React.Fragment>
+                            }
                         />
-                        <Button
-                            variant="contained"
-                            color="secondary"
-                            onClick={() => handleDeleteBooking(booking.id)}
-                        >
-                            Cancel Booking
-                        </Button>
                     </ListItem>
                 ))}
             </List>

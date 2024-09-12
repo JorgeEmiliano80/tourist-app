@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Grid } from '@material-ui/core';
+import { Container, Typography } from '@mui/material';
+import Grid2 from '@mui/material/Unstable_Grid2'; // Importamos Grid2
 import TourCard from '../components/TourCard';
 import { getTours } from '../services/tourService';
 
@@ -21,19 +22,19 @@ const HomePage = () => {
 
     return (
         <Container>
-            <Typography variant="h2" gutterBottom>
+            <Typography variant="h2" component="h1" gutterBottom>
                 Welcome to Tourist App
             </Typography>
-            <Typography variant="h4" gutterBottom>
+            <Typography variant="h4" component="h2" gutterBottom>
                 Featured Tours
             </Typography>
-            <Grid container spacing={3}>
+            <Grid2 container spacing={3}>
                 {tours.map((tour) => (
-                    <Grid item xs={12} sm={6} md={4} key={tour.id}>
+                    <Grid2 xs={12} sm={6} md={4} key={tour.id}>
                         <TourCard tour={tour} />
-                    </Grid>
+                    </Grid2>
                 ))}
-            </Grid>
+            </Grid2>
         </Container>
     );
 };

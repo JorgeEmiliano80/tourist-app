@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, List, ListItem, ListItemText } from '@material-ui/core';
+import { Container, Typography, List, ListItem, ListItemText } from '@mui/material';
 import { getPayments } from '../services/paymentService';
+import { useAuthContext } from '../context/AuthContext'; // Asumiendo que tienes un AuthContext
 
 const PaymentPage = () => {
     const [payments, setPayments] = useState([]);
@@ -21,7 +22,7 @@ const PaymentPage = () => {
 
     return (
         <Container>
-            <Typography variant="h2" gutterBotom>
+            <Typography variant="h2" component="h1" gutterBottom>
                 Payment History
             </Typography>
             <List>

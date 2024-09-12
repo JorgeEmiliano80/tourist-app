@@ -6,29 +6,29 @@ import (
 )
 
 type PaymentService struct {
-	Repo *repository.PaymentRepository
+	repo *repository.PaymentRepository
 }
 
 func NewPaymentService(repo *repository.PaymentRepository) *PaymentService {
-	return &PaymentService{Repo: repo}
+	return &PaymentService{repo: repo}
 }
 
-func (s *PaymentService) GetPayments() ([]models.Payment, error) {
-	return s.Repo.GetPayments()
+func (s *PaymentService) GetAllPayments() ([]models.Payment, error) {
+	return s.repo.GetAll()
 }
 
-func (s *PaymentService) GetPayment(id int) (*models.Payment, error) {
-	return s.Repo.GetPayment(id)
+func (s *PaymentService) GetPaymentByID(id int) (*models.Payment, error) {
+	return s.repo.GetByID(id)
 }
 
 func (s *PaymentService) CreatePayment(payment *models.Payment) error {
-	return s.Repo.CreatePayment(payment)
+	return s.repo.Create(payment)
 }
 
 func (s *PaymentService) UpdatePayment(payment *models.Payment) error {
-	return s.Repo.UpdatePayment(payment)
+	return s.repo.Update(payment)
 }
 
 func (s *PaymentService) DeletePayment(id int) error {
-	return s.Repo.DeletePayment(id)
+	return s.repo.Delete(id)
 }

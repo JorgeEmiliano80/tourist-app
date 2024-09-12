@@ -6,29 +6,29 @@ import (
 )
 
 type ClientService struct {
-	Repo *repository.ClientRepository
+	repo *repository.ClientRepository
 }
 
 func NewClientService(repo *repository.ClientRepository) *ClientService {
-	return &ClientService{Repo: repo}
+	return &ClientService{repo: repo}
 }
 
-func (s *ClientService) GetClients() ([]models.Client, error) {
-	return s.Repo.GetClients()
+func (s *ClientService) GetAllClients() ([]models.Client, error) {
+	return s.repo.GetAll()
 }
 
-func (s *ClientService) GetClient(id int) (*models.Client, error) {
-	return s.Repo.GetClient(id)
+func (s *ClientService) GetClientByID(id int) (*models.Client, error) {
+	return s.repo.GetByID(id)
 }
 
 func (s *ClientService) CreateClient(client *models.Client) error {
-	return s.Repo.CreateClient(client)
+	return s.repo.Create(client)
 }
 
 func (s *ClientService) UpdateClient(client *models.Client) error {
-	return s.Repo.UpdateClient(client)
+	return s.repo.Update(client)
 }
 
 func (s *ClientService) DeleteClient(id int) error {
-	return s.Repo.DeleteClient(id)
+	return s.repo.Delete(id)
 }

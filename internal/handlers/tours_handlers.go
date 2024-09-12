@@ -1,74 +1,104 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
+
 	"tourist-app/internal/models"
 	"tourist-app/internal/services"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 )
 
 type TourHandler struct {
-	Service *services.TourService
+	service *services.TourService
 }
 
 func NewTourHandler(service *services.TourService) *TourHandler {
-	return &TourHandler{Service: service}
+	return &TourHandler{service: service}
 }
 
-func (h *TourHandler) GetTours(c *gin.Context) {
-	tours, err := h.Service.GetTours()
+func (h *TourHandler) GetAllTours(w http.ResponseWriter, r *http.Request) {
+	tours, err := h.service.GetAllTours()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusOK, tours)
+	json.NewEncoder(w).Encode(tours)
 }
 
-func (h *TourHandler) GetTour(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	tour, err := h.Service.GetTour(id)
+func (h *TourHandler) GetTour(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Tour not found"})
+		http.Error(w, "Invalid tour ID", http.StatusBadRequest)
 		return
 	}
-	c.JSON(http.StatusOK, tour)
+
+	tour, err := h.service.GetTourByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	json.NewEncoder(w).Encode(tour)
 }
 
-func (h *TourHandler) CreateTour(c *gin.Context) {
+func (h *TourHandler) CreateTour(w http.ResponseWriter, r *http.Request) {
 	var tour models.Tour
-	if err := c.ShouldBindJSON(&tour); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	err := json.NewDecoder(r.Body).Decode(&tour)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := h.Service.CreateTour(&tour); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	err = h.service.CreateTour(&tour)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusCreated, tour)
+
+	w.WriteHeader(http.StatusCreated)
 }
 
-func (h *TourHandler) UpdateTour(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+func (h *TourHandler) UpdateTour(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid tour ID", http.StatusBadRequest)
+		return
+	}
+
 	var tour models.Tour
-	if err := c.ShouldBindJSON(&tour); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	err = json.NewDecoder(r.Body).Decode(&tour)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	tour.TourID = id
-	if err := h.Service.UpdateTour(&tour); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	tour.ID = id
+	err = h.service.UpdateTour(&tour)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusOK, tour)
+
+	w.WriteHeader(http.StatusOK)
 }
 
-func (h *TourHandler) DeleteTour(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	if err := h.Service.DeleteTour(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+func (h *TourHandler) DeleteTour(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid tour ID", http.StatusBadRequest)
 		return
 	}
-	c.JSON(http.StatusNoContent, nil)
+
+	err = h.service.DeleteTour(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

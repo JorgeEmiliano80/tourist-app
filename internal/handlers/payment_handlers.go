@@ -1,74 +1,106 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
+
 	"tourist-app/internal/models"
 	"tourist-app/internal/services"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 )
 
 type PaymentHandler struct {
-	Service *services.PaymentService
+	service *services.PaymentService
 }
 
 func NewPaymentHandler(service *services.PaymentService) *PaymentHandler {
-	return &PaymentHandler{Service: service}
+	return &PaymentHandler{service: service}
 }
 
-func (h *PaymentHandler) GetPayments(c *gin.Context) {
-	payments, err := h.Service.GetPayments()
+func (h *PaymentHandler) GetAllPayments(w http.ResponseWriter, r *http.Request) {
+	payments, err := h.service.GetAllPayments()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusOK, payments)
+
+	json.NewEncoder(w).Encode(payments)
 }
 
-func (h *PaymentHandler) GetPayment(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	payment, err := h.Service.GetPayment(id)
+func (h *PaymentHandler) GetPayment(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Payment not found"})
+		http.Error(w, "Invalid payment ID", http.StatusBadRequest)
 		return
 	}
-	c.JSON(http.StatusOK, payment)
+
+	payment, err := h.service.GetPaymentByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(payment)
 }
 
-func (h *PaymentHandler) CreatePayment(c *gin.Context) {
+func (h *PaymentHandler) CreatePayment(w http.ResponseWriter, r *http.Request) {
 	var payment models.Payment
-	if err := c.ShouldBindJSON(&payment); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	err := json.NewDecoder(r.Body).Decode(&payment)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := h.Service.CreatePayment(&payment); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	err = h.service.CreatePayment(&payment)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusCreated, payment)
+
+	w.WriteHeader(http.StatusCreated)
 }
 
-func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+func (h *PaymentHandler) UpdatePayment(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid payment ID", http.StatusBadRequest)
+		return
+	}
+
 	var payment models.Payment
-	if err := c.ShouldBindJSON(&payment); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	err = json.NewDecoder(r.Body).Decode(&payment)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	payment.PaymentID = id
-	if err := h.Service.UpdatePayment(&payment); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	payment.ID = id
+	err = h.service.UpdatePayment(&payment)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusOK, payment)
+
+	w.WriteHeader(http.StatusOK)
 }
 
-func (h *PaymentHandler) DeletePayment(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	if err := h.Service.DeletePayment(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+func (h *PaymentHandler) DeletePayment(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid payment ID", http.StatusBadRequest)
 		return
 	}
-	c.JSON(http.StatusNoContent, nil)
+
+	err = h.service.DeletePayment(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

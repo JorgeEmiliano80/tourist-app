@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Container, Typography, Button } from '@material-ui/core';
-import ClienList from '../components/ClienList';
+import { Container, Typography, Button } from '@mui/material';
+import ClientList from '../components/ClientList';
 import { useClientContext } from '../context/ClientContext';
 import { createClient, updateClient } from '../services/clientService';
 

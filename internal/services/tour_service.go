@@ -6,29 +6,29 @@ import (
 )
 
 type TourService struct {
-	Repo *repository.TourRepository
+	repo *repository.TourRepository
 }
 
 func NewTourService(repo *repository.TourRepository) *TourService {
-	return &TourService{Repo: repo}
+	return &TourService{repo: repo}
 }
 
-func (s *TourService) GetTours() ([]models.Tour, error) {
-	return s.Repo.GetTours()
+func (s *TourService) GetAllTours() ([]models.Tour, error) {
+	return s.repo.GetAll()
 }
 
-func (s *TourService) GetTour(id int) (*models.Tour, error) {
-	return s.Repo.GetTour(id)
+func (s *TourService) GetTourByID(id int) (*models.Tour, error) {
+	return s.repo.GetByID(id)
 }
 
 func (s *TourService) CreateTour(tour *models.Tour) error {
-	return s.Repo.CreateTour(tour)
+	return s.repo.Create(tour)
 }
 
 func (s *TourService) UpdateTour(tour *models.Tour) error {
-	return s.Repo.UpdateTour(tour)
+	return s.repo.Update(tour)
 }
 
 func (s *TourService) DeleteTour(id int) error {
-	return s.Repo.DeleteTour(id)
+	return s.repo.Delete(id)
 }

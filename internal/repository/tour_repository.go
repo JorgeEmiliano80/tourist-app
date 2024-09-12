@@ -2,19 +2,20 @@ package repository
 
 import (
 	"database/sql"
+
 	"tourist-app/internal/models"
 )
 
 type TourRepository struct {
-	DB *sql.DB
+	db *sql.DB
 }
 
 func NewTourRepository(db *sql.DB) *TourRepository {
-	return &TourRepository{DB: db}
+	return &TourRepository{db: db}
 }
 
-func (r *TourRepository) GetTours() ([]models.Tour, error) {
-	rows, err := r.DB.Query("SELECT * FROM public.tours")
+func (r *TourRepository) GetAll() ([]models.Tour, error) {
+	rows, err := r.db.Query("SELECT id, name, description, price, start-date, end_date, capacity FROM tours")
 	if err != nil {
 		return nil, err
 	}
@@ -22,38 +23,39 @@ func (r *TourRepository) GetTours() ([]models.Tour, error) {
 
 	var tours []models.Tour
 	for rows.Next() {
-		var tour models.Tour
-		if err := rows.Scan(&tour.TourID, &tour.Name, &tour.Description, &tour.Price, &tour.CreatedAt, &tour.UpdatedAt); err != nil {
+		var t models.Tour
+		err := rows.Scan(&t.ID, &t.Name, &t.Description, &t.Price, &t.StartDate, &t.EndDate, &t.Capacity)
+		if err != nil {
 			return nil, err
 		}
-		tours = append(tours, tour)
+		tours = append(tours, t)
 	}
 	return tours, nil
 }
 
-func (r *TourRepository) GetTour(id int) (*models.Tour, error) {
-	row := r.DB.QueryRow("SELECT * FROM public.tours WHERE tour_id = $1", id)
-
-	var tour models.Tour
-	if err := row.Scan(&tour.TourID, &tour.Name, &tour.Description, &tour.Price, &tour.CreatedAt, &tour.UpdatedAt); err != nil {
+func (r *TourRepository) GetByID(id int) (*models.Tour, error) {
+	var t models.Tour
+	err := r.db.QueryRow("SELECT id, name, description, price, start_date, end_date, capacity FROM tours WHERE id = $1", id).
+		Scan(&t.ID, &t.Name, &t.Description, &t.Price, &t.StartDate, &t.EndDate, &t.Capacity)
+	if err != nil {
 		return nil, err
 	}
-	return &tour, nil
+	return &t, nil
 }
 
-func (r *TourRepository) CreateTour(tour *models.Tour) error {
-	_, err := r.DB.Exec("INSERT INTO public.tours (name, description, price, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)",
-		tour.Name, tour.Description, tour.Price, tour.CreatedAt, tour.UpdatedAt)
+func (r *TourRepository) Create(tour *models.Tour) error {
+	_, err := r.db.Exec("INSERT INTO tour (name, description, price, start_date, end_date, capacity) VALUES ($1, $2, $3, $4, $5, $6)",
+		tour.Name, tour.Description, tour.Price, tour.StartDate, tour.EndDate, tour.Capacity, tour.ID)
 	return err
 }
 
-func (r *TourRepository) UpdateTour(tour *models.Tour) error {
-	_, err := r.DB.Exec("UPDATE public.tours SET name = $1, description = $2, price = $3, updated_at = $4 WHERE tour_id = $5",
-		tour.Name, tour.Description, tour.Price, tour.UpdatedAt, tour.TourID)
+func (r *TourRepository) Update(tour *models.Tour) error {
+	_, err := r.db.Exec("UPDATE tours SET name = $1, description = $2, price = $3, start_date = $4, end_date = $5, capacity = $6 WHERE id = $7",
+		tour.Name, tour.Description, tour.Price, tour.StartDate, tour.EndDate, tour.Capacity, tour.ID)
 	return err
 }
 
-func (r *TourRepository) DeleteTour(id int) error {
-	_, err := r.DB.Exec("DELETE FROM public.tours WHERE tour_id = $1", id)
+func (r *TourRepository) Delete(id int) error {
+	_, err := r.db.Exec("DELETE FROM tours WHERE id = $1", id)
 	return err
 }
